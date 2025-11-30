@@ -44,7 +44,9 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .single()
 
-    const newOrder = maxOrderData?.order !== undefined ? maxOrderData.order + 1 : 0
+    const newOrder = maxOrderData?.order !== null && maxOrderData?.order !== undefined 
+      ? maxOrderData.order + 1 
+      : 0
 
     const { data, error } = await supabase
       .from('todos')
@@ -60,6 +62,46 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to create todo' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH update order of todos
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { todos } = body
+
+    if (!Array.isArray(todos)) {
+      return NextResponse.json(
+        { error: 'Todos array is required' },
+        { status: 400 }
+      )
+    }
+
+    // Update all todos' order values
+    const updatePromises = todos.map((todo: { id: string; order: number }) =>
+      supabase
+        .from('todos')
+        .update({ order: todo.order })
+        .eq('id', todo.id)
+    )
+
+    const results = await Promise.all(updatePromises)
+    
+    const errors = results.filter(result => result.error)
+    if (errors.length > 0) {
+      return NextResponse.json(
+        { error: 'Failed to update some todos' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ message: 'Order updated successfully' })
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to update order' },
       { status: 500 }
     )
   }

@@ -25,6 +25,7 @@ export default function TodoItem({ todo, onUpdate }: TodoItemProps) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : 1,
   }
 
   const handleToggle = async () => {
@@ -79,21 +80,35 @@ export default function TodoItem({ todo, onUpdate }: TodoItemProps) {
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className={`flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing transition-all ${
+      className={`flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-200 ${
         todo.completed ? 'opacity-60' : ''
-      } ${
-        isDragging
-          ? 'bg-gray-100 scale-105 shadow-lg z-50'
-          : 'hover:shadow-md'
-      }`}
+      } ${isDragging ? 'z-50' : ''}`}
     >
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none"
+        aria-label="드래그하여 순서 변경"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-6 h-6 text-gray-400 hover:text-gray-600"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+          />
+        </svg>
+      </div>
       <input
         type="checkbox"
         checked={todo.completed}
         onChange={handleToggle}
-        onClick={(e) => e.stopPropagation()}
         disabled={isLoading}
         className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
       />
@@ -107,10 +122,7 @@ export default function TodoItem({ todo, onUpdate }: TodoItemProps) {
         {todo.title}
       </span>
       <button
-        onClick={(e) => {
-          e.stopPropagation()
-          handleDelete()
-        }}
+        onClick={handleDelete}
         disabled={isLoading}
         className="px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >

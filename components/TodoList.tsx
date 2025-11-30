@@ -23,7 +23,6 @@ export default function TodoList() {
   const [todos, setTodos] = useState<Todo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isReordering, setIsReordering] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -51,6 +50,10 @@ export default function TodoList() {
     }
   }
 
+  useEffect(() => {
+    fetchTodos()
+  }, [])
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
 
@@ -65,10 +68,9 @@ export default function TodoList() {
       return
     }
 
-    // Optimistically update the UI
+    // Optimistically update UI
     const newTodos = arrayMove(todos, oldIndex, newIndex)
     setTodos(newTodos)
-    setIsReordering(true)
 
     // Update order values based on new positions
     const updatedTodos = newTodos.map((todo, index) => ({
@@ -77,8 +79,8 @@ export default function TodoList() {
     }))
 
     try {
-      const response = await fetch('/api/todos/reorder', {
-        method: 'PUT',
+      const response = await fetch('/api/todos', {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -86,21 +88,18 @@ export default function TodoList() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to reorder todos')
+        throw new Error('Failed to update order')
       }
+
+      // Refresh todos to ensure consistency
+      await fetchTodos()
     } catch (error) {
-      console.error('Error reordering todos:', error)
+      console.error('Error updating order:', error)
       // Revert on error
-      fetchTodos()
-      alert('순서 변경에 실패했습니다.')
-    } finally {
-      setIsReordering(false)
+      await fetchTodos()
+      alert('순서 업데이트에 실패했습니다.')
     }
   }
-
-  useEffect(() => {
-    fetchTodos()
-  }, [])
 
   if (isLoading) {
     return (
